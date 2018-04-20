@@ -102,7 +102,7 @@ sites.pull.use <- which(sapply(1:length(downloads.clean), function(x) unique(!is
 
 downloads.clean <- lapply(sites.pull.use, function(x) downloads.clean[[x]])
 
-#try to sort site ids so that sample.id is ascending (is alrady done in fact not necessary)
+#try to sort site ids so that sample.id is ascending
 site.ids.downloads.clean <- sapply(1:length(downloads.clean), function(x) 
   downloads.clean[[x]]$dataset$dataset.meta$dataset.id)
 

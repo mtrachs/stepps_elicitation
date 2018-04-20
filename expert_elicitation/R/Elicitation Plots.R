@@ -65,7 +65,7 @@ site.lon <- round(as.numeric(all.new.england[site.lon.index.eff]),2)
 #fuse the two calls for data, we only use data from the US
 index_us <- which(site_ids%in%meta.data.neus$datasetID)
 site_ids_us <- site_ids[index_us]
-
+site_ids_us <- sort(site_ids_us)
 
 #--------------------------------------------------------------------------------------------------------------------
 # Download data with a loop
