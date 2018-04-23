@@ -1,5 +1,5 @@
 library(ncdf4)
-veg <- nc_open('~/workflow_stepps_calibration/calibration/data/SetTreeComp_Level2_v1.0.nc')
+veg <- nc_open(paste(folder_location,'calibration/data/SetTreeComp_Level2_v1.0.nc',sep=''))
 veg.names <- names(veg$var) #gives the names of the genera available 
 #load a taxon at a time
 veg.comp <- lapply(veg.names,function(x) {

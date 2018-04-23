@@ -7,7 +7,7 @@ library(fields)#
 library(readr)
 library(rioja)
 #-------------------------------------------------------------------------------------------------------------------
-setwd('~/workflow_stepps_calibration/calibration/')
+setwd(paste(folder_location,'calibration/',sep=''))
 help.fun.loc <- 'calibration_helper_funs/'
 data.loc <- 'data/'
 plot.loc <- 'plots/'
@@ -59,7 +59,7 @@ if('veg_mean.RDS'%in%list.files(data.loc)){
   veg_mean <- replace(veg_mean,veg_mean==0,2e-7) #does this have an effect
   reconst_grid <- build_grid(veg_box, resolution = 8000, proj = '+init=epsg:3175')
 
-  setwd('~/workflow_stepps_calibration/calibration/')
+  setwd(paste(folder_location,'calibration/',sep=''))
   saveRDS(veg_mean,paste(data.loc,'veg_mean.RDS',sep=''))
 }
 
@@ -67,14 +67,14 @@ if('veg_mean.RDS'%in%list.files(data.loc)){
 
 
 
-source('~/workflow_stepps_calibration/calibration/calibration_helper_funs/get_meta_data_cal.R')#neotoma::get_dataset(loc = pol_box, datasettype = 'pollen')#perhaps use Andrias Code for that
+source(paste(help.fun.loc, 'get_meta_data_cal.R',sep=''))#neotoma::get_dataset(loc = pol_box, datasettype = 'pollen')#perhaps use Andrias Code for that
 datasets <- meta 
 
 #--------------------------------------------------
 #load site.ids of sites that have data between present and 4000 cal BP
 
-site_ids_us <- read.table('~/workflow_stepps_calibration/expert_elicitation/data/site_ids.txt',header=TRUE)
-ind.plot <- read.table('~/workflow_stepps_calibration/expert_elicitation/data/plot_index.txt')
+site_ids_us <- read.table(paste(folder_location,'expert_elicitation/data/site_ids.txt',sep=''),header=TRUE)
+ind.plot <- read.table(paste(folder_location,'expert_elicitation/data/plot_index.txt',sep=''))
 
 # find site ids that were plotted and ultimately used
 site_ids_us <- site_ids_us[[1]][ind.plot[[1]]]
@@ -84,13 +84,13 @@ site_ids_us <- site_ids_us[[1]][ind.plot[[1]]]
 
 if(!'downloads.rds' %in% list.files('data/')) {
   downloads <- neotoma::get_download(datasets)
-  saveRDS(downloads, 'data/downloads.rds')
+  saveRDS(downloads, paste(data.loc,'downloads.rds',sep=''))
 } else {
-  downloads <- readRDS('data/downloads.rds')
+  downloads <- readRDS(paste(data.loc,'downloads.rds',sep=''))
 }
 
 
-#find data that has been plottd
+#find data that has been plotted
 downloads.clean <-
   lapply(1:length(downloads), function(x) {
     daten <- NA
@@ -102,7 +102,7 @@ sites.pull.use <- which(sapply(1:length(downloads.clean), function(x) unique(!is
 
 downloads.clean <- lapply(sites.pull.use, function(x) downloads.clean[[x]])
 
-#try to sort site ids so that sample.id is ascending
+#try to sort site ids so that sample.id is ascending (is alrady done in fact not necessary)
 site.ids.downloads.clean <- sapply(1:length(downloads.clean), function(x) 
   downloads.clean[[x]]$dataset$dataset.meta$dataset.id)
 
@@ -120,11 +120,11 @@ source(paste(help.fun.loc,'evaluate_elicitation_certainty.R',sep=''))
 #--------------------------------------------------------------------------------------------------------------------
 # find sites that are outside the domain of vegetation
 #immediately remove the three sites that were not used in elicitation
-if('meta_data.RDS'%in%list.files('~/workflow_stepps_calibration/expert_elicitation/data/')){
-  meta.data.neus <- readRDS('~/workflow_stepps_calibration/expert_elicitation/data/meta_data.RDS')
+if('meta_data.RDS'%in%list.files(paste(folder_location,'/expert_elicitation/data/',sep=''))){
+  meta.data.neus <- readRDS(paste(folder_location,'expert_elicitation/data/meta_data.RDS',sep=''))
 }else {
-source('~/workflow_stepps_calibration/expert_elicitation/elicitation_helper_funs/get_meta_data.R')
-  saveRDS(meta.data.neus,'~/workflow_stepps_calibration/expert_elicitation/data/meta_data.RDS')
+source(paste(folder_location,'expert_elicitation/elicitation_helper_funs/get_meta_data.R',sep=''))
+  saveRDS(meta.data.neus,paste(folder_location,'/expert_elicitation/data/meta_data.RDS',sep=''))
 }  
   
 ind.plot <- ind.plot[[1]]
@@ -208,7 +208,7 @@ for (i in 2:length(test)) {
 }
 
 
-write.csv(sort(colnames(pollen.test)),'~/workflow_stepps_calibration/calibration/data/taxon_names.csv')
+write.csv(sort(colnames(pollen.test)),paste(folder_location,'calibration/data/taxon_names.csv',sep=''))
   
 
 #make taxa translation table 
@@ -227,7 +227,7 @@ calib_trans <- translate_taxa(pollen.test,
 
 
 #-------------------------------------------------------------------------------------------------------------------
-veg_table <- readr::read_csv(paste(data.loc,'/veg_trans_edited_only_abies.csv',sep=''))
+veg_table <- readr::read_csv(paste(data.loc,'/veg_trans_edited.csv',sep=''))
 veg_trans <- translate_taxa(veg_mean, veg_table ,id_cols = colnames(veg_mean)[1:2])
 
 
@@ -246,8 +246,6 @@ test_neus <- prep_input(veg = veg_table,
 test_neus$d <-  round(test_neus$d/1e+06,5)
 test_neus$d_pot[,1] <- test_neus$d_pot[,1]/1e+06 
 
-
-K <- test_neus$K
 N_cores <- test_neus$N_cores
 N_cells <- test_neus$N_cells
 y <- test_neus$y
@@ -260,13 +258,25 @@ N_pot <- test_neus$N_pot
 N_hood <- test_neus$N_hood
 num_sites <- dim(pol_table)[1]
 
+
+
+oh_new_pollen <- rowSums(y[,c("Other hardwood","Elm","Poplar")])
+y[,"Other hardwood"] <- oh_new_pollen
+y <- y[,(colnames(y)%in%c("Elm","Poplar"))==FALSE]
+K <- ncol(y)
+
+oh_veg <- rowSums(r[,c("Other hardwood","Elm","Poplar")])
+r[,"Other hardwood"] <- oh_veg
+r <- r[,(colnames(r)%in%c("Elm","Poplar"))==FALSE]
+r <- r/rowSums(r)
+
 library(rstan)
-stan_rdump(list = names(test_neus), file = paste(data.loc,'/elicitation_neus_certainty_median_',num_sites,'_sites_only_abies.dump',sep=''))
+stan_rdump(list = names(test_neus), file = paste(data.loc,'/elicitation_neus_certainty_median.dump',sep=''))
 
 veg_coords <- veg_table@coords
 pollen_coords <- pol_table@coords
 save(list = c(names(test_neus),'veg_coords','pollen_coords'), 
-     file = paste(data.loc,'elicitation_neus_certainty_median_',num_sites,'_sites_only_abies.RData',sep=''))
+     file = paste(data.loc,'elicitation_neus_certainty_median.RData',sep=''))
 #-------------------------------------------------------------------------------------------------------------------
 #also save data as .csv
 write.csv(calib_trans,paste(data.loc,'pollen_elicitation_NEUS.csv',sep=''))

@@ -6,7 +6,7 @@ library(maps)#3.2.0
 
 #---------------------------------------------------------------------------------------------------------------
 #set working directory and location of helper files
-setwd('~/workflow_stepps_calibration/expert_elicitation/')
+setwd(paste(folder_location,'expert_elicitation',sep=''))
 help.fun.loc <- 'elicitation_helper_funs/'
 data.loc <- 'data/'
 plot.loc <- 'plots/'
